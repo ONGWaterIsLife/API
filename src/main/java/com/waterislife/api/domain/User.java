@@ -1,26 +1,43 @@
 package com.waterislife.api.domain;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
-import java.io.Serializable;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Document
-public class User implements Serializable {
+public class User implements UserDetails {
     private static final long serialVersionUID = 1L;
 
     @Id
+    @JsonIgnore
     private String id;
     private String name;
     private String email;
 
+    @JsonIgnore
+    private String password;
+    
+    private List<String> roles = new ArrayList<>();
+
     public User() {
+    	roles.add("USER");
     }
 
-    public User(String id, String name, String email) {
+    public User(String id, String name, String email, String password) {
         this.id = id;
         this.name = name;
         this.email = email;
+        this.password = password;
+        roles.add("USER");
     }
 
     public String getId() {
@@ -45,5 +62,51 @@ public class User implements Serializable {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+	public void addRole(String role) {
+		this.roles.add(role);
+	}
+
+	@Override
+    public String getPassword() {
+        return this.password;
+    }
+
+    @Override
+    public String getUsername() {
+        return this.email;
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
+    }
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        if (roles == null) {
+            return Collections.emptyList();
+        }
+        return roles.stream().map(role -> (GrantedAuthority) () -> "ROLE_" + role).collect(Collectors.toSet());
     }
 }
